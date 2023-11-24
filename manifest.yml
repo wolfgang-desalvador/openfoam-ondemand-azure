@@ -1,0 +1,7 @@
+---
+name: OpenFOAM
+category: Interactive Apps
+subcategory: Simulation Softwares
+role: batch_connect
+description: |
+  This app will launch an OpenFOAM job on an Azure CycleCloud cluster.

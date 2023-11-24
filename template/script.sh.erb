@@ -1,0 +1,48 @@
+#!/bin/bash
+set -x
+
+SCRIPT_FOLDER="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+export FILE_PATH=<%= context.case_path %>
+export OPENFOAM_VERSION=<%= context.openfoam_version %>
+
+OPENFOAM_CASE=$FILE_PATH
+
+export PATH=$STAR_PATH:$PATH
+export CDLMD_LICENSE_FILE=<port>@<host>
+
+source /etc/profile.d/modules.sh
+source /opt/hpcx*/hpcx-init.sh
+hpcx_load
+
+cd $(dirname $FILE_PATH)
+
+NODES=$(sort -u < $PBS_NODEFILE | wc -l)
+PPN=$(uniq -c < $PBS_NODEFILE | tail -n1 | awk '{print $1}')
+CORES=$(wc -l <$PBS_NODEFILE)
+
+export LD_LIBRARY_PATH=/usr/lib:$LD_LIBRARY_PATH
+export OPENMPI_DIR=$HPCX_MPI_DIR
+
+ucx_info -v
+
+source $SCRIPT_FOLDER/azure_process_pinning.sh $PPN
+export mppflags="--bind-to cpulist:ordered --cpu-set $AZURE_PROCESSOR_LIST --rank-by slot --report-bindings -mca mca_base_env_list UCX_TLS=dc_x,sm;UCX_MAX_RNDV_RAILS=1"
+
+
+<%= context.openfoam_pre_commands %>
+
+cat << EOF >> run_script.sh
+#!/bin/bash
+
+source /opt/hpcx*/hpcx-init.sh
+hpcx_load
+source $OPENFOAM_VERSION/etc/bashrc 
+
+<%= context.openfoam_solution_commands %>
+
+EOF
+
+mpirun $mppflags /bin/bash $FILE_PATH/run_script.sh
+
+<%= context.openfoam_post_commands %>

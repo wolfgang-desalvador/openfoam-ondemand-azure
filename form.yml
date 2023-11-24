@@ -1,0 +1,91 @@
+---
+cluster: ''
+
+attributes:
+  hbv3_cores:
+    label: 'Number of CPUs'
+    widget: 'number_field'
+    min: 32
+    max: 96
+    step: 32
+    value: 32
+
+  hbv4_cores:
+    label: 'Number of CPUs'
+    widget: 'number_field'
+    min: 24
+    max: 144
+    step: 24
+    value: 24
+
+  num_nodes:
+    label: 'Number of nodes'
+    widget: 'number_field'
+    min: 1
+    max: 6
+    step: 1
+    value: 1
+
+  job_name:
+    widget: 'text_field'
+    label: 'Job Name'
+    value: ''
+
+  case_path:
+    widget: 'text_field'
+    label: 'Input Case Path'
+    value: ''
+
+  sku:
+      widget: 'select'
+      label: 'SKU'
+      value: 'Standard_HB120rs_v3'
+      help: |
+         SKU Type to be used for simulation
+      options:
+         - ['Milan-X HBv3-series', 'Standard_HB120rs_v3', data-hide-hbv4-cores: true]
+         - ['Genoa-X HBv4-series', 'Standard_HB176rs_v4', data-hide-hbv3-cores: true]  
+
+  openfoam_version:
+      widget: 'select'
+      label: 'OpenFOAM Version'
+      value: 'OpenFOAM 11'
+      help: |
+         OpenFOAM version to be used for simulation
+      options:
+         - ['OpenFOAM 11', '/shared/apps/OpenFOAM/OpenFOAM-11']
+
+  openfoam_pre_commands:
+    widget: "openfoam_pre_commands"
+    label: "OpenFOAM Pre Commands"
+    value: "blockmesh"
+    help: |
+      Insert the sequence of OpenFOAM calls
+
+  openfoam_solution_commands:
+    widget: "openfoam_solution_commands"
+    label: "OpenFOAM solution Commands"
+    value: "simpleFoam -parallel"
+    help: |
+      Insert the sequence of OpenFOAM calls
+
+  openfoam_post_coommands:
+    widget: "openfoam_post_coommands"
+    label: "OpenFOAM Post Commands"
+    value: "reconstructPar"
+    help: |
+      Insert the sequence of OpenFOAM calls
+
+
+form:
+  - job_name
+  - case_path
+  - openfoam_version
+  - sku
+  - hbv3_cores
+  - hbv4_cores
+  - num_nodes
+  - openfoam_pre_commands
+  - openfoam_solution_commands
+  - openfoam_post_commands
+  

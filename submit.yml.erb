@@ -1,0 +1,18 @@
+# Job submission configuration file
+#
+---
+batch_connect:
+  template: "basic"
+
+<%-
+  cores = if sku == "Standard_HB120rs_v3"
+              hbv3_cores
+            else
+              hbv4_cores
+            end
+%>
+
+script:
+  job_name: <%= job_name %>
+  queue_name: "workq"
+  native: ["-l", "select=<%= num_nodes %>:ncpus=<%= cores %>:mpiprocs=<%= cores %>:vm_size=<%= sku %>,place=scatter:excl"]
