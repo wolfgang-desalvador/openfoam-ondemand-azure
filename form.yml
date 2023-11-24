@@ -56,21 +56,21 @@ attributes:
          - ['OpenFOAM 11', '/shared/apps/OpenFOAM/OpenFOAM-11']
 
   openfoam_pre_commands:
-    widget: "openfoam_pre_commands"
+    widget: "text_area"
     label: "OpenFOAM Pre Commands"
     value: "blockmesh"
     help: |
       Insert the sequence of OpenFOAM calls
 
   openfoam_solution_commands:
-    widget: "openfoam_solution_commands"
+    widget: "text_area"
     label: "OpenFOAM solution Commands"
     value: "simpleFoam -parallel"
     help: |
       Insert the sequence of OpenFOAM calls
 
   openfoam_post_coommands:
-    widget: "openfoam_post_coommands"
+    widget: "text_area"
     label: "OpenFOAM Post Commands"
     value: "reconstructPar"
     help: |
