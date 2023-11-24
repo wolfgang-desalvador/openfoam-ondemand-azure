@@ -69,7 +69,7 @@ attributes:
     help: |
       Insert the sequence of OpenFOAM calls
 
-  openfoam_post_coommands:
+  openfoam_post_commands:
     widget: "text_area"
     label: "OpenFOAM Post Commands"
     value: "reconstructPar"
