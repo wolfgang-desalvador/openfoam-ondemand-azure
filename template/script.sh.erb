@@ -32,12 +32,12 @@ export mppflags="--bind-to cpulist:ordered --cpu-set $AZURE_PROCESSOR_LIST --ran
 
 <%= context.openfoam_pre_commands %>
 
-cat << EOF >> run_script.sh
+cat << EOF > run_script.sh
 #!/bin/bash
 
 source /opt/hpcx*/hpcx-init.sh
 hpcx_load
-source $OPENFOAM_VERSION/etc/bashrc 
+source $OPENFOAM_VERSION/etc/bashrc WM_MPLIB=SYSTEMOPENMPI
 
 <%= context.openfoam_solution_commands %>
 
