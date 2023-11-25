@@ -1,5 +1,5 @@
+
 #!/bin/bash
-set -x
 
 SCRIPT_FOLDER="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
@@ -9,13 +9,12 @@ export OPENFOAM_VERSION=<%= context.openfoam_version %>
 OPENFOAM_CASE=$FILE_PATH
 
 export PATH=$STAR_PATH:$PATH
-export CDLMD_LICENSE_FILE=<port>@<host>
 
 source /etc/profile.d/modules.sh
 source /opt/hpcx*/hpcx-init.sh
 hpcx_load
 
-cd $(dirname $FILE_PATH)
+cd $FILE_PATH
 
 NODES=$(sort -u < $PBS_NODEFILE | wc -l)
 PPN=$(uniq -c < $PBS_NODEFILE | tail -n1 | awk '{print $1}')
@@ -28,21 +27,76 @@ ucx_info -v
 
 source $SCRIPT_FOLDER/azure_process_pinning.sh $PPN
 export mppflags="--bind-to cpulist:ordered --cpu-set $AZURE_PROCESSOR_LIST --rank-by slot --report-bindings -mca mca_base_env_list UCX_TLS=dc_x,sm;UCX_MAX_RNDV_RAILS=1"
+source $OPENFOAM_VERSION/etc/bashrc WM_MPLIB=SYSTEMOPENMPI
 
+## Prepare pre commands scripts
+cat << EOF > pre_script.sh
+#!/bin/bash
+source /etc/profile.d/modules.sh
+module load gcc-9.2.1
+source /opt/hpcx*/hpcx-init.sh
+hpcx_load
+source $OPENFOAM_VERSION/etc/bashrc WM_MPLIB=SYSTEMOPENMPI
 
 <%= context.openfoam_pre_commands %>
+EOF
 
-cat << EOF > run_script.sh
+
+## Prepare parallel commands list
+cat << EOF > parallel_commands
+<%= context.openfoam_solution_commands %>
+EOF
+
+
+## Prepare post commands list
+cat << EOF > post_script.sh
 #!/bin/bash
+source /etc/profile.d/modules.sh
+module load gcc-9.2.1
 
 source /opt/hpcx*/hpcx-init.sh
 hpcx_load
 source $OPENFOAM_VERSION/etc/bashrc WM_MPLIB=SYSTEMOPENMPI
 
-<%= context.openfoam_solution_commands %>
-
+<%= context.openfoam_post_commands %>
 EOF
 
-mpirun $mppflags /bin/bash $FILE_PATH/run_script.sh
 
-<%= context.openfoam_post_commands %>
+## Correct end of lines and make executables
+chmod +x pre_script.sh
+chmod +x post_script.sh
+dos2unix pre_script.sh
+dos2unix parallel_commands
+dos2unix post_script.sh
+
+./pre_script.sh
+
+## Prepare parallel commands scripts
+parallel_command=0
+while IFS= read -r command;
+do
+parallel_command=$(($parallel_command+1))
+
+cat << EOF > run_script_$parallel_command.sh
+#!/bin/bash
+source /etc/profile.d/modules.sh
+module load gcc-9.2.1
+
+source /opt/hpcx*/hpcx-init.sh
+hpcx_load
+source $OPENFOAM_VERSION/etc/bashrc WM_MPLIB=SYSTEMOPENMPI
+
+$command
+EOF
+
+chmod +x run_script_$parallel_command.sh
+done < parallel_commands
+
+
+## Now run all the parallel commands
+for i in $(seq 1 $parallel_command)
+do
+mpirun -hostfile $PBS_NODEFILE $mppflags /bin/bash $FILE_PATH/run_script_$i.sh || true
+done
+
+./post_script.sh
